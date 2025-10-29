@@ -3,6 +3,8 @@
 ラズパイPicoを使ってTFT液晶に表示するデモプログラムです。
 開発環境はMicroPythonです。
 
+表示がとても遅いです。
+
 ## Parts
 ・Raspberry Pi Pico
 
