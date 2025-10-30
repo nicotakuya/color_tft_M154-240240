@@ -225,10 +225,10 @@ def vram_putstr(textstr):
 def vram_putdec(num):
     shift=10000
     while shift > 0:
-        ch = (num / shift) % 10
-        ch += '0'
+        ch = int(num / shift) % 10
+        ch += 0x30
         vram_putch(ch)
-        shift /= 10
+        shift = int(shift/10)
 
 # point
 def vram_point(x,y):
@@ -530,7 +530,7 @@ class EnemyClass:
 # DEMO
 def spacefight():
     TEKIMAX = 15    # 敵の数
-    MOVEPITCH = 30  # 移動カウント
+    MOVEPITCH = 20  # 移動周期
     MOVESEQ = (10+10+2+2) # 移動シーケンス
 
     gamespeed = 0 #game speed
@@ -552,7 +552,7 @@ def spacefight():
             vram_locate(13,int(VRAM_HEIGHT/2))
             vram_putstr("READY")
             score=0
-            gamespeed=MOVEPITCH
+            gamespeed = MOVEPITCH
             ax = int(VRAM_WIDTH/2)    # 自機座標
             ay = VRAM_HEIGHT - (VRSPSIZE * VRSPZOOM)
         
@@ -578,11 +578,11 @@ def spacefight():
 
         while overflag==0:
             vram_cls() 
- #         key = 0
- #         if key & KEY_LEFT:ax -= 2
- #         if key & KEY_RIGHT:ax += 2
- #         if ax<8:ax=8
- #         if ax>VRAM_WIDTH-8:ax=VRAM_WIDTH-8
+            key = random.randrange(3)
+            if key==1:ax -= 2*VRSPZOOM
+            if key==2:ax += 2*VRSPZOOM
+            if ax<8*VRSPZOOM:ax=8*VRSPZOOM
+            if ax>VRAM_WIDTH-8*VRSPZOOM:ax=VRAM_WIDTH-8*VRSPZOOM
             vram_spput(ax, ay, 0,color1)        #my ship
 
             if by <= -1:
@@ -623,7 +623,7 @@ def spacefight():
                         teki[i].y = -1
                     continue
                 
-                if (abs(by-y)<threthold) and (abs(bx-x)<threthold): #命中
+                if (abs(by-y)<threthold) and (abs(bx-x)<threthold): # 弾が敵に命中
                     if score < 9999:score+=1
                     if gamespeed > 2:gamespeed-=1
                     teki[i].b = 15
@@ -632,13 +632,13 @@ def spacefight():
                 
                 if ttime==0:
                     if tmove < 10:#01234
-                        x+=2
+                        x += 2*VRSPZOOM
                     elif tmove < (10+2):#5
-                        y+=2
+                        y += 2*VRSPZOOM
                     elif tmove < (10+2+10):#6789a
-                        x-=2
+                        x -= 2*VRSPZOOM
                     else:
-                        y+=2
+                        y += 2*VRSPZOOM
                     
                     if y >= VRAM_HEIGHT:
                         overflag=1
@@ -648,8 +648,8 @@ def spacefight():
                 vram_spput(x,y ,1+(tmove & 1),color2)
                 continue
             
-            if (abs(cy-ay)<threthold) and (abs(cx-ax)<threthold):
-                overflag=1
+            if (abs(cy-ay)<threthold) and (abs(cx-ax)<threthold): # 敵の弾が命中
+                overflag = 1
 
             if tnum==0:    #敵全滅
                 gamespeed += 8
@@ -667,7 +667,7 @@ def spacefight():
             vram_locate(8,int(VRAM_HEIGHT*3/4))
             vram_putdec(score)
             disp_update()
-            time.sleep(1000)
+            time.sleep(2)
 
 # DEMO
 def linedemo():
@@ -773,6 +773,8 @@ def chardemo():
     for tmpx in range(0,240,10):
         vram_line(120,0,tmpx,239,tmpcolor)
 
+    vram_locate(0, 0)
+    vram_textcolor(color16bit(255,255,255))
     vram_putstr("TFT LCD\n")
     vram_putstr("DEMO\n")
     disp_update()
@@ -798,4 +800,4 @@ while True:
     landscape()
     vectordemo()
     spacefight()
-#    lifegame()
+    lifegame()
