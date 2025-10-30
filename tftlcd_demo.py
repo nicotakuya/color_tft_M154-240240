@@ -335,7 +335,8 @@ def vram_putch(ch):
     def_posx += 8*FONTSIZE
 
 #
-VRSPSIZE = 7
+VRSPSIZE = 7   # Sprite size
+VRSPZOOM = 3   # Sprite zoom
 # PRINT SPRITE
 def vram_spput(x, y, num, color):
     idx =  num * VRSPSIZE
@@ -346,18 +347,23 @@ def vram_spput(x, y, num, color):
         idx += 1
         for i in range(VRSPSIZE):
             if dat & (1<<(VRSPSIZE-1)):
-                vram_pset(x+i,y+j,color)
+                tx = x+(i*VRSPZOOM)    
+                ty = y+(j*VRSPZOOM)    
+                for y1 in range(VRSPZOOM):
+                    for x1 in range(VRSPZOOM):
+                        vram_pset(tx+x1,ty+y1,color)
+
             dat <<= 1
 
 # CLEAR SPRITE
 def vram_spclr(x,y):
     x -= int(VRSPSIZE/2)
     y -= int(VRSPSIZE/2)
-    for j in range(VRSPSIZE):
-        for i in range(VRSPSIZE):
+    for j in range(VRSPSIZE*VRSPZOOM):
+        for i in range(VRSPSIZE*VRSPZOOM):
             vram_pset(x+i,y+j,0)
 
-# 
+# Display
 def disp_update():
     tft_command(0x2C)   # RAMWR (2Ch): Memory Write
     tftdc.high() # data
@@ -523,21 +529,21 @@ class EnemyClass:
 
 # DEMO
 def spacefight():
-    TEKIMAX = 15
-    MOVEPITCH = 30  #移動カウント
-    MOVESEQ = (10+10+2+2) #移動シーケンス
+    TEKIMAX = 15    # 敵の数
+    MOVEPITCH = 30  # 移動カウント
+    MOVESEQ = (10+10+2+2) # 移動シーケンス
 
-    gamespeed=0 #game speed
-    score=0    #Score
-    ax=0
-    ay=0 #My Ship X,Y
-
-    overflag=1
+    gamespeed = 0 #game speed
+    score = 0    #Score
+    ax=0 #My Ship X,Y
+    ay=0
+    overflag = 1
+    threthold = int(VRSPSIZE*3/4) * VRSPZOOM
 
     color1 = color16bit(255,128,  0)
     color2 = color16bit(255,  0,128)
     color3 = color16bit(128,  0,255)
-    timeout=100
+    timeout = 100
     while timeout > 0:
         vram_cls()
         if overflag:
@@ -547,16 +553,16 @@ def spacefight():
             vram_putstr("READY")
             score=0
             gamespeed=MOVEPITCH
-            ax=int(VRAM_WIDTH/2)    #プレーヤ座標
-            ay=VRAM_HEIGHT-5
+            ax = int(VRAM_WIDTH/2)    # 自機座標
+            ay = VRAM_HEIGHT - (VRSPSIZE * VRSPZOOM)
         
         vram_spput(ax, ay, 0,color1)        #my ship
-        bx=-1     #自弾座標
-        by=-1
-        cx=-1     #敵弾座標
-        cy=-1
+        bx = -1     #自弾座標
+        by = -1
+        cx = -1     #敵弾座標
+        cy = -1
         
-        teki = [] #敵座標
+        teki = [] # 敵座標
         pitch = int(VRAM_WIDTH/7)
         ofs = int(VRAM_WIDTH/10)
         for i in range(TEKIMAX):
@@ -565,8 +571,8 @@ def spacefight():
             b = 0
             teki.append(EnemyClass(x,y,b))
 
-        tmove=0
-        ttime=0
+        tmove = 0
+        ttime = 0
         disp_update()
         time.sleep(1)
 
@@ -579,11 +585,11 @@ def spacefight():
  #         if ax>VRAM_WIDTH-8:ax=VRAM_WIDTH-8
             vram_spput(ax, ay, 0,color1)        #my ship
 
-            if by < -1:
-                bx=ax
-                by=ay
+            if by <= -1:
+                bx = ax   # 発射
+                by = ay
             else:
-                by-=3
+                by -= 3*VRSPZOOM
                 vram_spput(bx,by,5,color3)    #my meam
 
             #Enemy Beam
@@ -593,7 +599,7 @@ def spacefight():
                     cx = teki[i].x
                     cy = teki[i].y
             else:
-                cy+=1
+                cy += 1*VRSPZOOM  # 弾の移動
                 if cy > VRAM_HEIGHT:
                     cy = -1
                 else:
@@ -617,7 +623,7 @@ def spacefight():
                         teki[i].y = -1
                     continue
                 
-                if (abs(by-y)<5) and (abs(bx-x)<5): #命中
+                if (abs(by-y)<threthold) and (abs(bx-x)<threthold): #命中
                     if score < 9999:score+=1
                     if gamespeed > 2:gamespeed-=1
                     teki[i].b = 15
@@ -642,7 +648,7 @@ def spacefight():
                 vram_spput(x,y ,1+(tmove & 1),color2)
                 continue
             
-            if (abs(cy-ay)<5) and (abs(cx-ax)<5):
+            if (abs(cy-ay)<threthold) and (abs(cx-ax)<threthold):
                 overflag=1
 
             if tnum==0:    #敵全滅
@@ -655,10 +661,10 @@ def spacefight():
         
         if overflag: #game over
             vram_spclr(ax,ay)
-            vram_spput(ax, ay, 4,color1)        #------自機をvramに転送
-            vram_locate(8,VRAM_HEIGHT/4)
+            vram_spput(ax, ay, 4,color1)
+            vram_locate(8,int(VRAM_HEIGHT/4))
             vram_putstr("GAME OVER")
-            vram_locate(8,VRAM_HEIGHT*3/4)
+            vram_locate(8,int(VRAM_HEIGHT*3/4))
             vram_putdec(score)
             disp_update()
             time.sleep(1000)
@@ -683,12 +689,13 @@ def linedemo():
         yb += yb1
         color = color16bit(random.randrange(256),random.randrange(256),random.randrange(256))
         vram_line(xa ,ya ,xb ,yb ,color)
-        if (xa<=0)or(xa>=VRAM_WIDTH):xa1 = -xa1
+        if (xa<=0)or(xa>=VRAM_WIDTH) :xa1 = -xa1
         if (ya<=0)or(ya>=VRAM_HEIGHT):ya1 = -ya1
-        if (xb<=0)or(xb>=VRAM_WIDTH):xb1 = -xb1
+        if (xb<=0)or(xb>=VRAM_WIDTH) :xb1 = -xb1
         if (yb<=0)or(yb>=VRAM_HEIGHT):yb1 = -yb1
         disp_update()
 
+# 
 class BallClass:
     def __init__(self,x,y,x1,y1):
         self.x = x
@@ -696,7 +703,7 @@ class BallClass:
         self.x1 = x1
         self.y1 = y1
 
-# 符合
+# 符合チェック
 def fnc_sgn(a):
     if a>0:return 1
     return -1
@@ -705,8 +712,9 @@ def fnc_sgn(a):
 def balldemo():
     BALLMAX = 20
     MLT = 3
+    threthold = VRSPSIZE * VRSPZOOM * MLT
     color1 = color16bit(255,128,255)
-    ball=[]
+    ball = []
     for i in range(BALLMAX):
         x = random.randrange(VRAM_WIDTH)*MLT
         y = random.randrange(VRAM_HEIGHT)*MLT
@@ -731,7 +739,7 @@ def balldemo():
                 xd = x2-ball[j].x
                 yd = y2-ball[j].y
 
-                if (abs(xd) < 7*MLT)and(abs(yd) < 7*MLT):
+                if (abs(xd) < threthold)and(abs(yd) < 7*threthold):
                     ball[i].x1 = fnc_sgn(xd)*(random.randrange(MLT*2)+1)
                     ball[i].y1 = fnc_sgn(yd)*(random.randrange(MLT*2)+1)
                     ball[j].x1 = -ball[i].x1
@@ -750,8 +758,9 @@ def balldemo():
         
         disp_update()
 
-# 
-def background():
+# 文字表示
+def chardemo():
+    vram_cls()
     tmpcolor = color16bit(255,0,0)
     for tmpx in range(0,240,10):
         vram_line(0,0,tmpx,239,tmpcolor)
@@ -769,8 +778,6 @@ def background():
     disp_update()
     time.sleep(1)
 
-# 文字表示
-def chardemo():
     chrnum = 0x20
     timeout = 100
     while timeout > 0:
@@ -783,7 +790,6 @@ def chardemo():
 #----
 # main
 tft_init()
-background()
 
 while True:
     chardemo()
@@ -793,5 +799,3 @@ while True:
     vectordemo()
     spacefight()
 #    lifegame()
-
-
