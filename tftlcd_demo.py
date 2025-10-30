@@ -215,7 +215,7 @@ def tft_init():
     vram_locate(0, 0)
     vram_textcolor(color16bit(255,255,255))
 
-#
+# print string
 def vram_putstr(textstr):
     textbytes = textstr.encode('utf-8')
     for i in range(len(textbytes)):
@@ -346,8 +346,8 @@ VRSPZOOM = 3   # Sprite zoom
 # PRINT SPRITE
 def vram_spput(x, y, num, color):
     idx =  num * VRSPSIZE
-    x -= int(VRSPSIZE/2)
-    y -= int(VRSPSIZE/2)
+    x -= int(VRSPSIZE*VRSPZOOM/2)
+    y -= int(VRSPSIZE*VRSPZOOM/2)
     for j in range(VRSPSIZE):
         dat = sp_pattern[idx]
         idx += 1
@@ -725,6 +725,7 @@ def balldemo():
     BALLMAX = 20
     MLT = 3
     threthold = VRSPSIZE * VRSPZOOM * MLT
+    threthold2 = int(VRSPSIZE * VRSPZOOM/2)
     color1 = color16bit(255,128,255)
     ball = []
     for i in range(BALLMAX):
@@ -740,10 +741,8 @@ def balldemo():
         vram_cls()
         
         for i in range(BALLMAX):
-            x2 = ball[i].x
-            y2 = ball[i].y
-            x2 += ball[i].x1
-            y2 += ball[i].y1
+            x2 = ball[i].x + ball[i].x1
+            y2 = ball[i].y + ball[i].y1
 
             # 衝突
             for j in range(BALLMAX):
@@ -751,7 +750,7 @@ def balldemo():
                 xd = x2-ball[j].x
                 yd = y2-ball[j].y
 
-                if (abs(xd) < threthold)and(abs(yd) < 7*threthold):
+                if (abs(xd) < threthold)and(abs(yd) < threthold):
                     ball[i].x1 = fnc_sgn(xd)*(random.randrange(MLT*2)+1)
                     ball[i].y1 = fnc_sgn(yd)*(random.randrange(MLT*2)+1)
                     ball[j].x1 = -ball[i].x1
@@ -762,10 +761,10 @@ def balldemo():
 
             x = int(x2/MLT)
             y = int(y2/MLT)
-            if x <= 3             : ball[i].x1 = (random.randrange(MLT*2)+1)
-            if x >= (VRAM_WIDTH-3): ball[i].x1 = -(random.randrange(MLT*2)+1)
-            if y <= 3              : ball[i].y1 = (random.randrange(MLT*2)+1)
-            if y >= (VRAM_HEIGHT-3): ball[i].y1 = -(random.randrange(MLT*2)+1)
+            if x <= threthold2             : ball[i].x1 = (random.randrange(MLT*2)+1)
+            if x >= (VRAM_WIDTH-threthold2): ball[i].x1 = -(random.randrange(MLT*2)+1)
+            if y <= threthold2              : ball[i].y1 = (random.randrange(MLT*2)+1)
+            if y >= (VRAM_HEIGHT-threthold2): ball[i].y1 = -(random.randrange(MLT*2)+1)
             vram_spput(x,y,6,color1)
         
         disp_update()
