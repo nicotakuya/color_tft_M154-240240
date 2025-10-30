@@ -285,6 +285,12 @@ def vram_line(x1 ,y1 ,x2 ,y2 ,c):
 
             vram_pset(x1, y1 ,c)
 
+# box fill
+def vram_fill(x1 ,y1 ,x2 ,y2 ,color):
+  for y in range(y1,y2,1):
+    for x in range(x1,x2,1):
+      vram_pset(x, y ,color)
+
 # text color
 def vram_textcolor(newcolor):
     global def_tcolor
@@ -486,20 +492,20 @@ def vectordemo():
 
 # DEMO
 def lifegame():
-    WSIZE=int(VRAM_WIDTH/2)
-
+    WSIZE = int(VRAM_WIDTH/2)
     lx1=( 0, 1, 1, 1, 0,-1,-1,-1)
     ly1=(-1,-1, 0, 1, 1, 1, 0,-1)
-
+    color = color16bit(255,0,255)
     vram_cls()
     for i in range(500):
         x= random.randrange(WSIZE)
         y= random.randrange(WSIZE)
-        vram_pset(x,y,color16bit(255,0,255))
+        vram_pset(x,y,color)
 
     ax=0
     bx=WSIZE
-    timeout=100
+    timeout = 10
+    sedai = 0
     while timeout > 0:
         timeout -= 1
         for y in range(WSIZE):
@@ -516,6 +522,12 @@ def lifegame():
                 if touch==3: color=color16bit(255,255,255)
                 vram_pset(bx+x,y,color)
         
+        sedai += 1
+        vram_fill(0,WSIZE+32,bx+WSIZE-1,WSIZE+64,0)
+        vram_textcolor(0xffff)
+        vram_locate(0,WSIZE+32)
+        vram_putdec(sedai)  # 世代数を表示
+
         x=ax #swap ax,bx
         ax=bx
         bx=x
