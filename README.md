@@ -1,9 +1,13 @@
 # TFT LCDの表示デモプログラム
 ## Overview
 ラズパイPicoを使ってTFT液晶に表示するデモプログラムです。
-開発環境はMicroPythonです。
 
-表示がとても遅いです。
+MicroPython版とArduino-Pico版の2種類があります。
+
+## Files
+tftlcd_demo.py : MicroPython版です。表示がとても遅いです。
+
+tftlcd_demo_arduino : Arduino-Pico版です。
 
 ## Parts
 ・Raspberry Pi Pico
