@@ -181,7 +181,7 @@ def tft_init():
     
     # polarity=0 phase=0(クロックlow=アイドル、データ立ち上がり=サンプリング)
     # 1Sec / Serial clock cycle 16 ns = 62500000 Hz
-    tftspi = SPI(0, baudrate=8000000,sck=Pin(GPIO_TFTSCK), mosi=Pin(GPIO_TFTTX))
+    tftspi = SPI(0, baudrate=16000000,sck=Pin(GPIO_TFTSCK), mosi=Pin(GPIO_TFTTX))
     tftcs = Pin(GPIO_TFTCS, mode=Pin.OUT)
     tftdc = Pin(GPIO_TFTDC, mode=Pin.OUT)
     tftcs.high() # disable 
@@ -369,13 +369,27 @@ def vram_spclr(x,y):
         for i in range(VRSPSIZE*VRSPZOOM):
             vram_pset(x+i,y+j,0)
 
-# Display
+# Display(for Pico/W)
 def disp_update():
     tft_command(0x2C)   # RAMWR (2Ch): Memory Write
     tftdc.high() # data
     tftcs.low()  # enable
-    tftspi.write(bytes(vram))
+    # メモリアロケーションエラーを回避するため分割して転送
+    ptr = 0
+    division = VRAM_WIDTH*2*16  #16ライン
+    while ptr < VRAM_SIZE:
+        tftspi.write(bytes(vram[ptr:ptr+division]))
+        ptr += division
+       
     tftcs.high() # disable 
+
+# Display(for Pico2/2W)
+#def disp_update():
+#    tft_command(0x2C)   # RAMWR (2Ch): Memory Write
+#    tftdc.high() # data
+#    tftcs.low()  # enable
+#    tftspi.write(bytes(vram))
+#    tftcs.high() # disable 
 
 #----
 sankaku = (
@@ -478,7 +492,7 @@ def vectordemo():
                 insk[i].y = random.randrange(6)*int((VRAM_HEIGHT<<OFST)/6)
                 insk[i].y1 = random.randrange(13)-7
                 insk[i].a1 = random.randrange(20)-10
-                insk[i].zoom = random.randrange(8)+4
+                insk[i].zoom = random.randrange(6)+2
                 continue
             
             vect_put( tx>>OFST, ty>>OFST, insk[i].ang, insk[i].zoom,color2)
