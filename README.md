@@ -16,3 +16,6 @@ tftlcd_demo_arduino : Arduino-Pico版です。
 
 ## Photo
 ![Image](https://github.com/user-attachments/assets/72bff21d-fb0c-4209-93fd-47953c67075a)
+
+## Movie
+https://www.youtube.com/watch?v=6roJWbaqL2E
