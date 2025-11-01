@@ -33,7 +33,7 @@
 #define FONTSIZE    3
 #endif
 
-#define VRAMSIZE   (VRAMWIDTH*VRAMHEIGHT*2) // 115200 Bytes
+#define VRAMSIZE   (VRAMWIDTH*VRAMHEIGHT*2) 
 
 #if DISP_ROTATE==0
 #define VRAMXRANGE VRAMWIDTH
@@ -362,32 +362,6 @@ void spi_sendbyte(unsigned char data)
 }
 
 //
-void spi_send_n_byte(unsigned char *ptr,int bytecnt)
-{
-#if SOFT_SPI==0
-  SPI.transfer(ptr,bytecnt);
-#else
-  unsigned char bitmask;
-  unsigned char data;
-  while(bytecnt--){
-    data = *ptr++;
-    digitalWrite(TFTCLK, LOW);
-    bitmask = 0x80; // MSB FIRST
-    while(bitmask){
-      if(bitmask & data){
-        digitalWrite(TFTMOSI, HIGH);
-      }else{
-        digitalWrite(TFTMOSI, LOW);
-      }    
-      digitalWrite(TFTCLK, HIGH);
-      digitalWrite(TFTCLK, LOW);
-      bitmask >>= 1;
-    }
-  }
-#endif
-}
-
-//
 void tft_sendcmd(unsigned char data)
 {
   digitalWrite(TFTCD,LOW);
@@ -594,8 +568,8 @@ void disp_init(void)
   delay(200);
   tft_sendcmd(0x11); // SLPOUT (11h): Sleep Out 
   delay(100);
-  tft_sendcmd_byte(0x3A, 0x55);  // COLMOD (3Ah): Interface Pixel Format
-  tft_sendcmd_byte(0x36, 0); // MADCTL (36h): Memory Data Access Control 
+  tft_sendcmd_byte(0x3A, 0x55); // COLMOD (3Ah): Interface Pixel Format
+  tft_sendcmd_byte(0x36, 0x00); // MADCTL (36h): Memory Data Access Control 
   tft_sendcmd(0x21);  // INVON (21h): Display Inversion On 
   tft_sendcmd(0x29);  // DISPON (29h): Display On
   delay(200);
@@ -623,32 +597,6 @@ void spi_sendbyte(unsigned char data)
 }
 
 //
-void spi_send_n_byte(unsigned char *ptr,int bytecnt)
-{
-#if SOFT_SPI==0
-  SPI.transfer(ptr,bytecnt);
-#else
-  unsigned char bitmask;
-  unsigned char data;
-  while(bytecnt--){
-    data = *ptr++;
-    digitalWrite(TFTCLK, LOW);
-    bitmask = 0x80; // MSB FIRST
-    while(bitmask){
-      if(bitmask & data){
-        digitalWrite(TFTMOSI, HIGH);
-      }else{
-        digitalWrite(TFTMOSI, LOW);
-      }    
-      digitalWrite(TFTCLK, HIGH);
-      digitalWrite(TFTCLK, LOW);
-      bitmask >>= 1;
-    }
-  }
-#endif
-}
-
-//
 void tft_sendcmd(unsigned char data)
 {
   digitalWrite(TFTCD,LOW);
@@ -664,17 +612,6 @@ void tft_sendcmd_byte(unsigned char cmd,unsigned char data)
   tft_sendcmd(cmd);
   digitalWrite(TFTCS,LOW);
   spi_sendbyte(data);
-  digitalWrite(TFTCS,HIGH);
-  delay(1);
-}
-
-//
-void tft_sendcmd_word(unsigned char cmd,unsigned int data)
-{
-  tft_sendcmd(cmd);
-  digitalWrite(TFTCS,LOW);
-  spi_sendbyte((unsigned char)(data >> 8));
-  spi_sendbyte((unsigned char)(data & 0xff));
   digitalWrite(TFTCS,HIGH);
   delay(1);
 }
@@ -1158,7 +1095,7 @@ void chardemo(void)
   vram_cls();
   chrnum=0x20;
   vram_locate(0, (VRAMYMAX+1)-(8*putch_zoom));
-  color1 = color16bit(128,255,  0);
+  color1 = color16bit(255,255,255);
   vram_textcolor(color1);
   timeout = 100;
   while(timeout--){
@@ -1184,10 +1121,10 @@ void linedemo(void)
   ya =random(VRAMYMAX-1)+1;
   xb =random(VRAMXMAX-1)+1;
   yb =random(VRAMYMAX-1)+1;
-  xa1 =random(11)-5;
-  ya1 =random(11)-5;
-  xb1 =random(11)-5;
-  yb1 =random(11)-5;
+  xa1 =random(17)-8;
+  ya1 =random(17)-8;
+  xb1 =random(17)-8;
+  yb1 =random(17)-8;
 
   timeout = 100;
   while(timeout--){
@@ -1401,6 +1338,7 @@ void spacefight(void)
 #define TEKIMAX 15
 #define MOVEPITCH 30  //移動カウント
 #define MOVESEQ   (10+10+2+2) //移動シーケンス
+#define THRESHOLD 7*VRSPZOOM
 const unsigned char strready[]="READY";
 const unsigned char strover[]="GAME OVER";
 
@@ -1503,7 +1441,7 @@ const unsigned char strover[]="GAME OVER";
             ty[i]=-1;
           continue;
         }
-        if((fnc_abs(by-y)<5*VRSPZOOM)&&(fnc_abs(bx-x)<5*VRSPZOOM)){ //命中
+        if((fnc_abs(by-y)<THRESHOLD)&&(fnc_abs(bx-x)<THRESHOLD)){ //命中
           if(score < 9999)score++;
           if(gamespeed > 2)gamespeed-=1;
           tb[i]=15;
@@ -1512,13 +1450,13 @@ const unsigned char strover[]="GAME OVER";
         }
         if(ttime==0){
           if(tmove < 10){//01234
-            x+=2;
+            x += 2*VRSPZOOM;
           }else if(tmove < (10+2)){//5
-            y+=2;
+            y += 2*VRSPZOOM;
           }else if(tmove < (10+2+10)){//6789a
-            x-=2;
+            x -= 2*VRSPZOOM;
           }else{
-            y+=2;
+            y += 2*VRSPZOOM;
           }
           if(y >= VRAMYMAX)
             overflag=1;
@@ -1528,7 +1466,7 @@ const unsigned char strover[]="GAME OVER";
         vram_spput(x,y ,1+(tmove & 1),color2);
         continue;
       }
-      if((fnc_abs(cy-ay)<5*VRSPZOOM)&&(fnc_abs(cx-ax)<5*VRSPZOOM)){
+      if((fnc_abs(cy-ay)<THRESHOLD)&&(fnc_abs(cx-ax)<THRESHOLD)){
         overflag=1;
       }
 
