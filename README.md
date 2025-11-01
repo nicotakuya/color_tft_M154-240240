@@ -5,9 +5,11 @@
 MicroPython版とArduino-Pico版の2種類があります。
 
 ## Files
-tftlcd_demo.py : MicroPython版です。表示がとても遅いです。
+・tftlcd_demo.py : MicroPython版です。表示がとても遅いです。
 
-tftlcd_demo_arduino : Arduino-Pico版です。
+・tftlcd_demo_arduino : Arduino-Pico版です。
+
+・tftlcd_schematics.png : 回路図です。
 
 ## Parts
 ・Raspberry Pi Pico
