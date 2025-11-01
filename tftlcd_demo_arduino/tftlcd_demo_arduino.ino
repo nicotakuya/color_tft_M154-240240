@@ -19,18 +19,21 @@
 #define VRAMWIDTH   128  // width[pixel]
 #define VRAMHEIGHT  160  // height[pixel]
 #define FONTSIZE    2
+#define VRSPZOOM    3    // sprite zoom
 #endif
 
 #if DISP_TYPE==SSD1306
 #define VRAMWIDTH   128 // width[pixel]
 #define VRAMHEIGHT  64  // height[pixel]
-#define FONTSIZE    2
+#define FONTSIZE    1
+#define VRSPZOOM    1   // sprite zoom
 #endif
 
 #if DISP_TYPE==M154240240
 #define VRAMWIDTH   240  // width[pixel]
 #define VRAMHEIGHT  240  // height[pixel]
 #define FONTSIZE    3
+#define VRSPZOOM    3    // sprite zoom
 #endif
 
 #define VRAMSIZE   (VRAMWIDTH*VRAMHEIGHT*2) 
@@ -448,29 +451,29 @@ void disp_update(void)
 //
 void oled_command(unsigned char data)
 {
-  Wire.beginTransmission(OLEDADDR);
-  Wire.write(0b10000000);
-  Wire.write(data);             
-  Wire.endTransmission();
+  Wire1.beginTransmission(OLEDADDR);
+  Wire1.write(0b10000000);
+  Wire1.write(data);             
+  Wire1.endTransmission();
 }
 
 //
 void oled_command2(unsigned char data1,unsigned char data2)
 {
-  Wire.beginTransmission(OLEDADDR);
-  Wire.write(0b00000000);
-  Wire.write(data1);             
-  Wire.write(data2);             
-  Wire.endTransmission();
+  Wire1.beginTransmission(OLEDADDR);
+  Wire1.write(0b00000000);
+  Wire1.write(data1);             
+  Wire1.write(data2);             
+  Wire1.endTransmission();
 }
 
 // INITIALIZE
 void disp_init(void)
 {
-  Wire.setSDA(4);
-  Wire.setSCL(5);
-  Wire.setClock(2000000);  
-  Wire.begin();
+  Wire1.setSDA(18);
+  Wire1.setSCL(19);
+  Wire1.setClock(2000000);  
+  Wire1.begin();
 
   delay(50);
   oled_command2(SET_MULTIPLEX_RATIO , 0x3F);
@@ -495,22 +498,22 @@ void disp_update(void){
   unsigned char *ptr,*ptr2;
   unsigned char work;
 
-  Wire.beginTransmission(OLEDADDR);
-  Wire.write(0b00000000);
-  Wire.write(SET_COLUMN_ADDRESS);
-  Wire.write(0);       // start column
-  Wire.write(VRAMWIDTH-1); // end column
-  Wire.write(SET_PAGE_ADDRESS);
-  Wire.write(0);           // start page
-  Wire.write((VRAMHEIGHT/8)-1); // end page
-  Wire.endTransmission();
+  Wire1.beginTransmission(OLEDADDR);
+  Wire1.write(0b00000000);
+  Wire1.write(SET_COLUMN_ADDRESS);
+  Wire1.write(0);       // start column
+  Wire1.write(VRAMWIDTH-1); // end column
+  Wire1.write(SET_PAGE_ADDRESS);
+  Wire1.write(0);           // start page
+  Wire1.write((VRAMHEIGHT/8)-1); // end page
+  Wire1.endTransmission();
 
   x=0;
   y=0;
   ptr = vram;
   while(y < VRAMHEIGHT){  
-    Wire.beginTransmission(OLEDADDR);
-    Wire.write(0b01000000);
+    Wire1.beginTransmission(OLEDADDR);
+    Wire1.write(0b01000000);
 
     for(i=0; i<8; i++){
       ptr2 = ptr;
@@ -520,11 +523,11 @@ void disp_update(void){
         if(*ptr2)work |= 0x80;
         ptr2 += VRAMWIDTH*2;
       }
-      Wire.write(work);
+      Wire1.write(work);
       x++;
       ptr += 2;
     }
-    Wire.endTransmission();
+    Wire1.endTransmission();
     if(x >= VRAMWIDTH){
       x=0;
       y+=8;
@@ -900,7 +903,6 @@ void vram_puthex(unsigned char num)
 }
 
 #define VRSPSIZE 7
-#define VRSPZOOM 3
 // PRINT SPRITE
 void vram_spput(int x,int y, int num,unsigned int color)
 {
